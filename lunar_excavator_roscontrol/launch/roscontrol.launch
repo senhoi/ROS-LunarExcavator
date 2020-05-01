@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<launch>
+
+    <rosparam file="$(find lunar_excavator_roscontrol)/config/config.yaml" command="load"/>
+
+    <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" 
+        output="screen" ns="/excavator" args="excavation_slope_controller
+                                              excavation_1st_translation_controller
+                                              excavation_2nd_translation_controller
+                                              excavation_arm_translation_controller
+                                              excavation_arm_controller
+                                              scooper_controller
+                                              joint_state_controller"/>
+
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" 
+        respawn="false" output="screen">
+        <remap from="/joint_states" to="/excavator/joint_states"/>
+    </node>
+
+</launch>

@@ -1,0 +1,370 @@
+<?xml version="1.0"?>
+<robot name="excavator">
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/excavator</robotNamespace>
+      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+    </plugin>
+  </gazebo>
+
+  <!-- add transmission -->
+  <transmission name="excavation_slope_control_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="excavation_slope_control_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="excavation_slope_control_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="excavation_1st_translation_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="excavation_1st_translation_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="excavation_1st_translation_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="excavation_2nd_translation_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="excavation_2nd_translation_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="excavation_2nd_translation_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="excavation_arm_translation_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="excavation_arm_translation_joint">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="excavation_arm_translation_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="excavation_arm_control_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="excavation_arm_control_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="excavation_arm_control_motor">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>16</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <transmission name="scooper_control_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="scooper_control_joint">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+    <actuator name="scooper_control_motor">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>16</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- fix body with the world -->
+  <!-- <link name="world"/>
+  <joint name="fixed" type="fixed">
+    <parent link="world"/>
+    <origin xyz="0 0 0" rpy="0 1.570796327 0" />
+	  <child link="body"/>
+  </joint> -->
+
+  <link name="base_link">
+  </link>
+  <joint name="fixed_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="body"/>
+  </joint>
+
+    <!-- add IMU sensor -->
+  <link name="imu_link">
+    <inertial>
+      <mass value="0.001"/>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <inertia
+        ixx="0.0001" ixy="0" ixz="0"
+        iyy="0.0001" iyz="0"
+        izz="0.0001"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.001 0.001 0.001"/>
+      </geometry>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <box size="0.001 0.001 0.001"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="imu_joint" type="fixed">
+    <axis xyz="1 0 0"/> <!-- 0 1 0 -->
+    <origin xyz="0 0 0"/>
+    <parent link="body"/>
+    <child link="imu_link"/>
+  </joint>
+
+  <gazebo reference="imu_link">
+    <gravity>true</gravity>
+    <sensor name="imu_sensor" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <visualize>true</visualize>
+      <topic>__default_topic__</topic>
+      <plugin filename="libgazebo_ros_imu_sensor.so" name="imu_plugin">
+        <topicName>imu</topicName>
+        <bodyName>imu_link</bodyName>
+        <updateRateHZ>500.0</updateRateHZ>
+        <gaussianNoise>0.0</gaussianNoise>
+        <xyzOffset>0 0 0</xyzOffset>
+        <rpyOffset>0 0 0</rpyOffset>
+        <frameName>imu_link</frameName>
+      </plugin>
+      <pose>0 0 0 0 0 0</pose>
+    </sensor>
+  </gazebo>
+
+
+  <link name="body">
+    <visual>
+    <origin xyz="0 0 0" rpy="1.570796327 0 0" />
+        <geometry>
+          <mesh filename="package://lunar_excavator_description/meshes/main_body.stl"/>
+        </geometry>
+        <material name="">
+          <color rgba="1 1 1 1" />
+        </material>
+    </visual>
+    <collision>
+      <origin xyz="-0.47 0 0" rpy="0 0 0" />
+      <geometry>
+        <box size="2.0 2.0 0.65"/>
+      </geometry>
+    </collision>
+    <inertial>
+        <origin xyz="0 0 0" rpy="0 0 0" />
+        <mass value="2000.0" />
+        <inertia
+          ixx="1000.0" ixy="0.0" ixz="0.0"
+          iyy="1000.0" iyz="0.0"
+          izz="1000.0" />
+    </inertial>
+  </link>
+
+  <link name="outer_rails">
+    <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://lunar_excavator_description/meshes/outer_rails.stl"/>
+        </geometry>
+        <material name="">
+          <color rgba="0.5 1 1 1" />
+        </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/outer_rails.stl"/>
+      </geometry>
+    </collision>
+    <inertial>
+        <origin xyz="0.74998261 -0.00005811 0.16658389" rpy="0 0 0" />
+        <mass value="27.63177009" />
+        <inertia
+          ixx="1.27870056" ixy="-0.00050103" ixz="0.74296627"
+          iyy="15.03945632" iyz="-0.00013221"
+          izz="15.99756570" />
+    </inertial>
+  </link>
+  <joint name="excavation_slope_control_joint" type="revolute">
+    <limit effort="1000.0" velocity="1.0" lower="-0.1745329252" upper="0.05235987756" />
+    <origin xyz="0.25 0 2.44" rpy="0 1.570796327 0" />
+    <parent link="body" />
+    <child link="outer_rails" />
+    <axis xyz="0 1 0" />
+    <dynamics friction="0" damping="0" />
+  </joint>
+
+  <link name="inner_rails">
+    <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://lunar_excavator_description/meshes/inner_rails.stl"/>
+        </geometry>
+        <material name="">
+          <color rgba="1 0.5 1 1" />
+        </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/inner_rails.stl"/>
+      </geometry>
+    </collision>
+    <inertial>
+        <origin xyz="1.12792092 0 0.07251447" rpy="0 0 0" />
+        <mass value="10.85744133" />
+        <inertia
+          ixx="0.36660754" ixy="0.0" ixz="0.03657933"
+          iyy="5.74477941" iyz="0.0"
+          izz="6.07655683" />
+    </inertial>
+  </link>
+  <joint name="excavation_1st_translation_joint" type="prismatic">
+    <limit effort="1000.0" velocity="1.0" lower="0" upper="2.0" />
+    <origin xyz="0 0 0.162" rpy="0 0 0" />
+    <parent link="outer_rails" />
+    <child link="inner_rails" />
+    <axis xyz="1 0 0" />
+    <dynamics friction="0" damping="0" />
+  </joint>
+
+  <link name="slider">
+    <visual>
+    <origin xyz="0 0 0" rpy="0 0 0" />
+        <geometry>
+          <mesh filename="package://lunar_excavator_description/meshes/slider.stl"/>
+        </geometry>
+        <material name="">
+          <color rgba="1 1 0.5 1" />
+        </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+          <mesh filename="package://lunar_excavator_description/meshes/slider.stl"/>
+      </geometry>
+    </collision>
+    <inertial>
+        <origin xyz="-0.00000109 -0.17547206 0.14659691" rpy="0 0 0" />
+        <mass value="1" />
+        <inertia
+          ixx="0.21357296" ixy="-0.00000089" ixz="-0.00000044"
+          iyy="0.21596446" iyz="0.00295147"
+          izz="0.26680748" />
+    </inertial>
+  </link>
+  <joint name="excavation_2nd_translation_joint" type="prismatic">
+    <limit effort="1000.0" velocity="1.0" lower="-2.0" upper="0" />
+    <origin xyz="0 0 0.039" rpy="0 0 1.570796327" />
+    <parent link="inner_rails" />
+    <child link="slider" />
+    <axis xyz="0 1 0" />
+    <dynamics friction="0" damping="0" />
+  </joint>
+
+  <link name="cylinder">
+    <inertial>
+      <origin xyz="0.12813039 0 0" rpy="0 0 0" />
+      <mass value="12.631701" />
+      <inertia
+        ixx="0.12700231" ixy="0" ixz="0"
+        iyy="0.09321138" iyz="0"
+        izz="0.09245197" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/cylinder.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.5 0.5 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/cylinder_low.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="excavation_arm_translation_joint" type="prismatic">
+    <limit effort="1000.0" velocity="1.0" lower="0" upper="0.12" />
+    <origin xyz="0 -0.175 0.112" rpy="-1.570796327 -1.570796327 0" />
+    <parent link="slider" />
+    <child link="cylinder" />
+    <axis xyz="1 0 0" />
+    <dynamics friction="0" damping="0" />
+  </joint>
+
+  <link name="excavation_arm">
+    <inertial>
+      <origin xyz="1.061534 0 0.16458509" rpy="0 0 0" />
+      <mass value="13.251326" />
+      <inertia
+        ixx="0.03657338" ixy="1.0E-08" ixz="0.07600599"
+        iyy="8.9381717" iyz="0"
+        izz="8.9310759" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/excavation_arm.stl"/>
+      </geometry>
+      <material name="">
+        <color rgba="0.5 1 0.5 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/excavation_arm_low.stl"/>
+      </geometry>
+    </collision>
+  </link>
+  <joint name="excavation_arm_control_joint" type="continuous">
+    <origin xyz="0.093 0 0" rpy="0 1.570796327 0" />
+    <parent link="cylinder" />
+    <child link="excavation_arm" />
+    <axis xyz="0 0 1" />
+    <dynamics friction="0" damping="0" />
+  </joint>
+
+  <link name="scooper">
+    <inertial>
+      <origin xyz="-0.00478844 -0.04155605 0" rpy="0 0 0" />
+      <mass value="0.64120597" />
+      <inertia
+        ixx="0.00645377" ixy="0" ixz="0"
+        iyy="0.00497204" iyz="0"
+        izz="0.00170747" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/scooper.stl" />
+      </geometry>
+      <material name="">
+        <color rgba="1 0.5 0.5 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://lunar_excavator_description/meshes/scooper.stl"  />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="scooper_control_joint" type="continuous">
+    <origin xyz="2.46 0 0.17" rpy="0 0 0" />
+    <parent link="excavation_arm" />
+    <child link="scooper" />
+    <axis xyz="0 0 1" />
+    <dynamics friction="0" damping="0" />
+  </joint>
+</robot>

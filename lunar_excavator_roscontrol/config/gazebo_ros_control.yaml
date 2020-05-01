@@ -1,0 +1,5 @@
+gazebo_ros_control/pid_gains:
+  excavation_slope_control_joint: {p: 1.0, i: 0.0, d: 1.0}
+  excavation_1st_translation_joint: {p: 1.0, i: 0.0, d: 1.0}
+  excavation_2nd_translation_joint: {p: 1.0, i: 0.0, d: 1.0}
+  excavation_arm_translation_joint: {p: 1.0, i: 0.0, d: 1.0}

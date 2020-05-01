@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<launch>
+
+    <arg name="world_file" default="$(find lunar_excavator_gazebo)/world/demo.world"/>
+
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="world_name" value="$(arg world_file)"/>
+        <arg name="paused" value="true"/>
+        <arg name="use_sim_time" value="true"/>
+        <arg name="gui" value="true"/>
+        <arg name="headless" value="false"/>
+        <arg name="recording" value="false"/>
+        <arg name="debug" value="false"/>
+    </include>
+
+    <!-- Load the URDF into the ROS Parameter Server -->
+    <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find lunar_excavator_description)/urdf/lunar_excavator.urdf'" />
+
+    <!-- Load the URDF into the Gazebo environment -->
+    <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model" args="-file $(find lunar_excavator_description)/urdf/lunar_excavator.urdf -urdf -z 4.5 -model lunar_excavator
+    -J scooper_control_joint 1.5"/>
+
+</launch>
