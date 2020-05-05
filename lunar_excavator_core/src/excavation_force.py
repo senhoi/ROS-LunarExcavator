@@ -17,7 +17,7 @@ Reference:
         the forces needed for excavation and traction. Journal of Terramechanics, 44(2), 133-152.
 """
 from math import *
-
+from numpy import deg2rad
 
 class ExcavationForce(object):
     def __init__(self, param):
@@ -31,22 +31,22 @@ class ExcavationForce(object):
         self.g = param["moon_gravity"]
         self.gamma = param["soil_specific_mass"]
         self.q = param["surcharge_mass"]
-        self.beta = param["rank_angle"] / 180 * 3.1416
-        self.rho = param["shear_plane_failure_angle"] / 180 * 3.1416
+        self.beta = deg2rad(param["rank_angle"])
+        self.rho = deg2rad(param["shear_plane_failure_angle"])
         self.v = param["tool_speed"]
         self.K = param["cut_resistance_index"]
         self.c = param["cohesion"]
-        self.phi = param["internal_friction_angle"] / 180 * 3.1416
+        self.phi = deg2rad(param["internal_friction_angle"])
         self.C_a = param["soil_tool_adhesion"]
         self.N0 = param["soil_tool_normal_force"]
-        self.delta = param["external_friction_angle"] / 180 * 3.1416
+        self.delta = deg2rad(param["external_friction_angle"])
 
         # Parameters below are only for Zeng Model
         self.a_h = param["horizontal_acceleration"]
         self.a_v = param["vertical_acceleration"]
         self.k0 = param["at_rest_earth_coefficient"]
         self.w_b = param["weight_of_excavation_blade"]
-        self.xi = param["soil_blade_friction_angle"] / 180 * 3.1416
+        self.xi = deg2rad(param["soil_blade_friction_angle"])
 
     @property
     def tool_depth(self):

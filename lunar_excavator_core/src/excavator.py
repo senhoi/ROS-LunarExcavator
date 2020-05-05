@@ -22,6 +22,8 @@ class Excavator(object):
         config_file_path = os.path.join(os.path.dirname(__file__), 'config/param_moon.json')
         with open(config_file_path) as config_file:
             param = json.load(config_file)
+            param = dict([(str(k), v) for k, v in param.items()])
+
         self.state = 0
         self.arm_angle = 359
         self.arm_length = param["arm_length"]
@@ -31,8 +33,8 @@ class Excavator(object):
 
         self.tool_depth = 0
         self.tool_angle = 0
-        self.center_height = 2.6
-        self.center_height_step = 0.4
+        self.center_height = 2.5
+        self.center_height_step = 0.02
 
         self.excavator_force = ExcavationForce(param)
 
@@ -237,7 +239,8 @@ class Excavator(object):
 
     def run(self, t):
         old_angle = self.arm_angle
-        self.arm_angle = (t * 360) % 360
+        # old_state = self.state
+        self.arm_angle = (t * 180) % 360
         if old_angle > 330 and self.arm_angle < 30:
             self.center_height -= self.center_height_step
             self.center_p = Point([0, self.center_height])
@@ -264,27 +267,30 @@ class Excavator(object):
                     self.state = 0
         if self.state == 1:
             self.plot_update_flag = True
+        # if old_state == 2 and self.state == 0:
+        #     rospy.logerr("Height step is too large!")
         if old_angle > 330 and self.arm_angle < 30:
             self.plot_update_flag = False
             self.update_ground_line()
         self.update_scooper_intersection()
         print(self.tool_depth, self.tool_angle)
+        self.excavator_force.tool_depth = self.tool_depth
+        self.excavator_force.tool_speed = self.arm_length * self.arm_speed
+        self.excavator_force.rank_angle = np.deg2rad(self.scooper_angle)
         self.render()
 
     def set_states_parameter(self, scooper_angle, arm_angle, arm_speed):
         # Note that an offset value might be required to add to scooper angle
-        self.scooper_angle = scooper_angle
-        self.arm_angle = arm_angle
+        self.scooper_angle = np.rad2deg(scooper_angle)  # deg
+        self.arm_angle = np.rad2deg(arm_angle)  # deg
         self.arm_speed = arm_speed  # rad/s
-        self.excavator_force.tool_depth = self.tool_depth
-        self.excavator_force.tool_speed = self.arm_length * self.arm_speed
-        self.excavator_force.rank_angle = self.scooper_angle
 
     def get_center_height(self):
         return self.center_height
 
 
 if __name__ == '__main__':
+    node = rospy.init_node("core")
     excavator = Excavator()
 
     def listener_cb(msg):
@@ -305,6 +311,7 @@ if __name__ == '__main__':
     while not rospy.is_shutdown():
         t = rospy.get_time() - start_t
         excavator.run(t)
-        f_x, f_y = excavator.excavator_force.SwickPerumpralModel()
+        f, f_x, f_y = excavator.excavator_force.SwickPerumpralModel()
+        print f, f_x, f_y
         talker_pub(f_x, f_y, excavator.center_height)
 
