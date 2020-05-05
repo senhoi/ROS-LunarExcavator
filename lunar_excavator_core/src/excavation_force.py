@@ -17,15 +17,13 @@ Reference:
         the forces needed for excavation and traction. Journal of Terramechanics, 44(2), 133-152.
 """
 from math import *
-import json
 
 
 class ExcavationForce(object):
-    def __init__(self, config_file, subset):
-        param = self.load_config_file(config_file, subset)
+    def __init__(self, param):
         self.w = param["tool_width"]
         self.l = param["tool_length"]
-        # self.d = param["tool_depth"]
+        self.d = param["tool_depth"]
         self.l_s = param["side_length"]
         self.s = param["side_thickness"]
         self.alpha_b = param["blunt_edge_angle"]
@@ -33,9 +31,9 @@ class ExcavationForce(object):
         self.g = param["moon_gravity"]
         self.gamma = param["soil_specific_mass"]
         self.q = param["surcharge_mass"]
-        # self.beta = param["rank_angle"] / 180 * 3.1416
+        self.beta = param["rank_angle"] / 180 * 3.1416
         self.rho = param["shear_plane_failure_angle"] / 180 * 3.1416
-        # self.v = param["tool_speed"]
+        self.v = param["tool_speed"]
         self.K = param["cut_resistance_index"]
         self.c = param["cohesion"]
         self.phi = param["internal_friction_angle"] / 180 * 3.1416
@@ -50,13 +48,29 @@ class ExcavationForce(object):
         self.w_b = param["weight_of_excavation_blade"]
         self.xi = param["soil_blade_friction_angle"] / 180 * 3.1416
 
-    def load_config_file(self, config_file, subset):
-        with open(config_file, 'r') as f:
-            param = json.load(f)
-            if not param[subset] == '':
-                return param[subset]
-            else:
-                raise ValueError(f"Can find the subset called {subset}")
+    @property
+    def tool_depth(self):
+        return self.d
+
+    @tool_depth.setter
+    def tool_depth(self, value):
+        self.d = value
+
+    @property
+    def rank_angle(self):
+        return self.beta
+
+    @rank_angle.setter
+    def rank_angle(self, value):
+        self.beta = value
+
+    @property
+    def tool_speed(self):
+        return self.v
+
+    @tool_speed.setter
+    def tool_speed(self, value):
+        self.v = value
 
     def SwickPerumpralModel(self):
         common_factor = self.w * self.d / sin(self.beta + self.phi + self.rho + self.delta)
@@ -234,6 +248,3 @@ class ExcavationForce(object):
 
         return t, tx, ty
 
-
-if __name__ == '__main__':
-    model = ExcForce('config/param_moon.json', '#1')
