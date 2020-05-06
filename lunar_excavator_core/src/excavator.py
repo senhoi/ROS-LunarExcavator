@@ -25,6 +25,7 @@ class Excavator(object):
             param = dict([(str(k), v) for k, v in param.items()])
 
         self.state = 0
+        self.old_angle = 0
         self.arm_angle = 359
         self.arm_length = param["arm_length"]
         self.arm_speed = 0
@@ -33,8 +34,9 @@ class Excavator(object):
 
         self.tool_depth = 0
         self.tool_angle = 0
-        self.center_height = 2.5
+        self.center_height = 2.45
         self.center_height_step = 0.02
+        self.translation_distance = 0
 
         self.excavator_force = ExcavationForce(param)
 
@@ -235,15 +237,17 @@ class Excavator(object):
         plt.pause(0.001)
         plt.cla()
         plt.xlim([-4, 4])
-        plt.ylim([-4, 4])
+        plt.ylim([-6, 6])
 
     def run(self, t):
-        old_angle = self.arm_angle
+        # self.old_angle = self.arm_angle
         # old_state = self.state
-        self.arm_angle = (t * 180) % 360
-        if old_angle > 330 and self.arm_angle < 30:
+        # self.arm_angle = (t * 180) % 360
+        print self.old_angle, self.arm_angle
+        if self.old_angle > 330 and self.arm_angle < 30:
             self.center_height -= self.center_height_step
             self.center_p = Point([0, self.center_height])
+            self.translation_distance += self.center_height_step
         self.update_scooper_position()
         if self.middle_arc_old is None:
             if self.left_segment1.has_intersection_with(self.scooper_segment):
@@ -269,11 +273,10 @@ class Excavator(object):
             self.plot_update_flag = True
         # if old_state == 2 and self.state == 0:
         #     rospy.logerr("Height step is too large!")
-        if old_angle > 330 and self.arm_angle < 30:
+        if self.old_angle > 330 and self.arm_angle < 30:
             self.plot_update_flag = False
             self.update_ground_line()
         self.update_scooper_intersection()
-        print(self.tool_depth, self.tool_angle)
         self.excavator_force.tool_depth = self.tool_depth
         self.excavator_force.tool_speed = self.arm_length * self.arm_speed
         self.excavator_force.rank_angle = np.deg2rad(self.scooper_angle)
@@ -281,37 +284,38 @@ class Excavator(object):
 
     def set_states_parameter(self, scooper_angle, arm_angle, arm_speed):
         # Note that an offset value might be required to add to scooper angle
-        self.scooper_angle = np.rad2deg(scooper_angle)  # deg
-        self.arm_angle = np.rad2deg(arm_angle)  # deg
+        self.scooper_angle = scooper_angle  # deg
+        self.old_angle = self.arm_angle
+        self.arm_angle = arm_angle  # deg
         self.arm_speed = arm_speed  # rad/s
 
-    def get_center_height(self):
-        return self.center_height
+    def get_translation_distance(self):
+        return self.translation_distance
 
 
 if __name__ == '__main__':
     node = rospy.init_node("core")
     excavator = Excavator()
 
-    def listener_cb(msg):
-        excavator.set_states_parameter(msg.x, msg.y, msg.z)
-
-    def talker_pub(exc_force_x, exc_force_y, height_command):
-        msg = Vector3()
-        msg.x = exc_force_x
-        msg.y = exc_force_y
-        msg.z = height_command
-        talker_excavator.publish(msg)
-
-    # publish excavation force(x,y) and height_command
-    talker_excavator = rospy.Publisher("excavation_forces", Vector3, queue_size=5)
-    # receive arm_angle, scooper_angle, tool_speed
-    listener_excavator = rospy.Subscriber("excavation_states", Vector3, listener_cb)
+    # def listener_cb(msg):
+    #     excavator.set_states_parameter(msg.x, msg.y, msg.z)
+    #
+    # def talker_pub(exc_force_x, exc_force_y, height_command):
+    #     msg = Vector3()
+    #     msg.x = exc_force_x
+    #     msg.y = exc_force_y
+    #     msg.z = height_command
+    #     talker_excavator.publish(msg)
+    #
+    # # publish excavation force(x,y) and height_command
+    # talker_excavator = rospy.Publisher("excavation_forces", Vector3, queue_size=5)
+    # # receive arm_angle, scooper_angle, tool_speed
+    # listener_excavator = rospy.Subscriber("excavation_states", Vector3, listener_cb)
     start_t = rospy.get_time()
     while not rospy.is_shutdown():
         t = rospy.get_time() - start_t
         excavator.run(t)
         f, f_x, f_y = excavator.excavator_force.SwickPerumpralModel()
         print f, f_x, f_y
-        talker_pub(f_x, f_y, excavator.center_height)
+        # talker_pub(f_x, f_y, excavator.center_height)
 

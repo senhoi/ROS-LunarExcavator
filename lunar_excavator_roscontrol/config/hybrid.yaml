@@ -1,0 +1,34 @@
+excavator:
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 1000
+
+  excavation_slope_controller:
+    type: position_controllers/JointPositionController
+    joint: excavation_slope_control_joint
+
+  excavation_1st_translation_controller:
+    type: position_controllers/JointPositionController
+    joint: excavation_1st_translation_joint
+
+  excavation_2nd_translation_controller:
+    type: position_controllers/JointPositionController
+    joint: excavation_2nd_translation_joint
+
+  excavation_arm_translation_controller:
+    type: position_controllers/JointPositionController
+    joint: excavation_arm_translation_joint
+  
+  excavation_arm_controller:
+    type: jungo_controller/JointHybridController
+    joint: excavation_arm_control_joint
+
+  scooper_controller:
+    type: jungo_controller/JointHybridController
+    joint: scooper_control_joint
+
+  gazebo_ros_control/pid_gains:
+    excavation_slope_control_joint: {p: 30000.0, i: 0.0, d: 10000.0}
+    excavation_1st_translation_joint: {p: 30000.0, i: 0.0, d: 10000.0}
+    excavation_2nd_translation_joint: {p: 30000.0, i: 0.0, d: 10000.0}
+    excavation_arm_translation_joint: {p: 30000.0, i: 0.0, d: 10000.0}
