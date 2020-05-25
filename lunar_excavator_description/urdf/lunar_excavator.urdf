@@ -153,16 +153,16 @@
     <collision>
       <origin xyz="-0.47 0 0" rpy="0 0 0" />
       <geometry>
-        <box size="2.0 2.0 0.65"/>
+        <mesh filename="package://lunar_excavator_description/meshes/main_body_simplified.stl"/>
       </geometry>
     </collision>
     <inertial>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <mass value="2000.0" />
+        <origin xyz="-0.00684206 0 1.0145331" rpy="0 0 0" />
+        <mass value="1916.2173" />
         <inertia
-          ixx="1000.0" ixy="0.0" ixz="0.0"
-          iyy="1000.0" iyz="0.0"
-          izz="1000.0" />
+          ixx="1354.451" ixy="0.00415954" ixz="-2.3276209"
+          iyy="1352.6798" iyz="-0.00747127"
+          izz="570.01685" />
     </inertial>
   </link>
 

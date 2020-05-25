@@ -8,7 +8,10 @@ from std_srvs.srv import Empty
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import Vector3
 from excavator import Excavator
+from jungo_controller.msg import JointControllerCommand
 import numpy as np
+import math as m
+import time
 
 
 class Joint(object):
@@ -24,9 +27,11 @@ class Joint(object):
         self.effort = effort
 
 
-auto_release_flag = False
 rotation_velocity = 0
-scooper_angle = 1.5
+rotation_effort = 0
+max_input_effort = 50
+result_effort = 50
+scooper_angle = 0
 slope_angle = 0
 translation_distance = 0
 
@@ -59,7 +64,7 @@ def joint_callback(msg):
 def cmd_event_callback(msg):
     global scooper_angle
     if msg.data == 'EVENT_0':  # pressed space
-        auto_release_flag = not auto_release_flag
+        pass
     elif msg.data == 'EVENT_1':  # pressed /
         scooper_angle = 1.5
         print "scooper_angle:{}".format(scooper_angle)
@@ -79,15 +84,16 @@ talker_slope_control_joint = rospy.Publisher("excavation_slope_controller/comman
 talker_1st_translation_joint = rospy.Publisher("excavation_1st_translation_controller/command", Float64, queue_size=5)
 talker_2nd_translation_joint = rospy.Publisher("excavation_2nd_translation_controller/command", Float64, queue_size=5)
 talker_arm_translation_joint = rospy.Publisher("excavation_arm_translation_controller/command", Float64, queue_size=5)
-talker_excavation_joint = rospy.Publisher("excavation_arm_controller/command", Float64, queue_size=5)
+talker_excavation_joint = rospy.Publisher("excavation_arm_controller/command", JointControllerCommand, queue_size=5)
 talker_scooper_joint = rospy.Publisher("scooper_controller/command", Float64, queue_size=5)
+
+talker_data_display = rospy.Publisher("data_display", Vector3, queue_size=5)
 
 listener_keyboard_vel = rospy.Subscriber("/cmd_vel", Twist, cmd_vel_callback)
 listener_keyboard_pose = rospy.Subscriber("/cmd_pose", Vector3, cmd_pose_callback)
 listener_keyboard_event = rospy.Subscriber("/cmd_event", String, cmd_event_callback)
 
 node = rospy.init_node("excavator_sim")
-rate = rospy.Rate(100)
 
 excavator = Excavator()
 
@@ -100,6 +106,7 @@ def calc_arm_translation_joint_angle(excavation_joint_angle):
         return 0
 
 
+
 old_angle = 0
 new_angle = 0
 sim_start_flag = False
@@ -108,19 +115,26 @@ while not rospy.is_shutdown():
     try:
         global translation_distance
         # comment below line to ban auto height adjustment
-        translation_distance = excavator.get_translation_distance()/2
+        translation_distance = excavator.get_translation_distance() / 2
         talker_1st_translation_joint.publish(Float64(translation_distance))
         talker_2nd_translation_joint.publish(Float64(-translation_distance))
         talker_slope_control_joint.publish(Float64(slope_angle))
-        talker_excavation_joint.publish(Float64(rotation_velocity))
+
+        msg = JointControllerCommand()
+        msg.position = 0
+        msg.velocity = rotation_velocity
+        msg.effort = result_effort
+        msg.kp = 0
+        msg.ki = 0
+        msg.kd = 0
+        talker_excavation_joint.publish(msg)
         talker_scooper_joint.publish(Float64(scooper_angle))
 
         excavation_joint_angle = joints_group['excavation_arm_control_joint'].position
         talker_arm_translation_joint.publish(Float64(calc_arm_translation_joint_angle(scooper_angle)))
     except:
         pass
-    if auto_release_flag:
-        pass
+
     try:
         t = rospy.get_time() - start_t
         old_angle = new_angle
@@ -133,7 +147,22 @@ while not rospy.is_shutdown():
         if sim_start_flag:
             excavator.run(t)
             f, f_x, f_y = excavator.excavator_force.SwickPerumpralModel()
-            print f, f_x, f_y
-        rate.sleep()
+            rotation_effort = - f_x * m.fabs(excavator.arm_length * m.sin(np.deg2rad(new_angle))) + f_y * excavator.arm_length * m.cos(np.deg2rad(new_angle))
+            print rotation_effort
+            if joints_group['excavation_arm_control_joint'].velocity < 0:
+                result_effort = 0
+            else:
+                result_effort = rotation_effort + max_input_effort
+                print rotation_effort, max_input_effort
+
+            print result_effort
+
+            effort = joints_group['excavation_arm_control_joint'].effort
+            velocity = joints_group['excavation_arm_control_joint'].velocity
+
+            print 'power: {}'.format(max_input_effort * velocity)
+            print "f: {}\tf_x:{}\tf_y:{}\ttor:{}".format(f, f_x, f_y, rotation_effort)
+
+            talker_data_display.publish(Vector3(x=f_x, y=velocity, z=max_input_effort * velocity / 0.9))
     except rospy.ROSTimeMovedBackwardsException, e:
         rospy.logwarn("ROSTimeMovedBackwardsException during sleep(). Continue anyway...")

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 
-    <rosparam file="$(find lunar_excavator_roscontrol)/config/config.yaml" command="load"/>
+    <rosparam file="$(find lunar_excavator_roscontrol)/config/hybrid.yaml" command="load"/>
 
     <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" 
         output="screen" ns="/excavator" args="excavation_slope_controller

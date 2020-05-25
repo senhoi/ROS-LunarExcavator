@@ -34,8 +34,8 @@ class Excavator(object):
 
         self.tool_depth = 0
         self.tool_angle = 0
-        self.center_height = 2.45
-        self.center_height_step = 0.02
+        self.center_height = 2.525
+        self.center_height_step = 0.001
         self.translation_distance = 0
 
         self.excavator_force = ExcavationForce(param)
@@ -93,7 +93,7 @@ class Excavator(object):
     def update_scooper_intersection(self):
         if self.state == 0:
             self.tool_depth = 0
-            self.tool_angle = 0
+            self.tool_angle = 0.01
             if not self.plot_update_flag:
                 self.left_segment1_temp = self.left_segment1
                 self.middle_arc_temp_old = self.middle_arc_old
@@ -233,7 +233,8 @@ class Excavator(object):
                                             [self.left_segment1.p2.y, self.left_segment1.p1.y]))
             self.ax.add_artist(lines.Line2D([self.right_segment1.p2.x, self.right_segment1.p1.x],
                                             [self.right_segment1.p2.y, self.right_segment1.p1.y]))
-        plt.text(0, 0, str(self.state))
+        plt.text(0, 0, str(self.translation_distance))
+        plt.text(-3.5, 5, str(self.center_height_step))
         plt.pause(0.001)
         plt.cla()
         plt.xlim([-4, 4])
@@ -243,7 +244,6 @@ class Excavator(object):
         # self.old_angle = self.arm_angle
         # old_state = self.state
         # self.arm_angle = (t * 180) % 360
-        print self.old_angle, self.arm_angle
         if self.old_angle > 330 and self.arm_angle < 30:
             self.center_height -= self.center_height_step
             self.center_p = Point([0, self.center_height])
@@ -279,12 +279,14 @@ class Excavator(object):
         self.update_scooper_intersection()
         self.excavator_force.tool_depth = self.tool_depth
         self.excavator_force.tool_speed = self.arm_length * self.arm_speed
-        self.excavator_force.rank_angle = np.deg2rad(self.scooper_angle)
-        self.render()
+        self.excavator_force.rank_angle = np.deg2rad(self.tool_angle)
+        print self.center_height, self.circle.r
+        if self.old_angle > 330 and self.arm_angle < 30:
+            self.render()
 
     def set_states_parameter(self, scooper_angle, arm_angle, arm_speed):
         # Note that an offset value might be required to add to scooper angle
-        self.scooper_angle = scooper_angle  # deg
+        # self.scooper_angle = scooper_angle  # deg
         self.old_angle = self.arm_angle
         self.arm_angle = arm_angle  # deg
         self.arm_speed = arm_speed  # rad/s

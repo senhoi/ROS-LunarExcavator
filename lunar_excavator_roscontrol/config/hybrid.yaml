@@ -24,8 +24,9 @@ excavator:
     joint: excavation_arm_control_joint
 
   scooper_controller:
-    type: jungo_controller/JointHybridController
+    type: effort_controllers/JointPositionController
     joint: scooper_control_joint
+    pid: {p: 3, i: 0, d: 1, i_clamp_max: 1}
 
   gazebo_ros_control/pid_gains:
     excavation_slope_control_joint: {p: 30000.0, i: 0.0, d: 10000.0}
